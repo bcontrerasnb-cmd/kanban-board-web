@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tablero Kanban | Field Ops</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        body { background: #0f172a; color: #fff; font-family: 'Segoe UI', system-ui, sans-serif; }
+        .board { display: flex; gap: 1.5rem; padding: 2rem; overflow-x: auto; align-items: flex-start; min-height: 80vh; }
+        .kanban-col { background: #1e293b; border-radius: 8px; width: 320px; min-width: 320px; padding: 1rem; }
+        .kanban-col h5 { font-weight: bold; font-size: 1rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid #334155; }
+        .drop-zone { min-height: 150px; display: flex; flex-direction: column; gap: 0.8rem; }
+        .task-card { background: #334155; padding: 1rem; border-radius: 6px; cursor: grab; position: relative; border-left: 4px solid #3b82f6; transition: transform 0.2s; }
+        .task-card:active { cursor: grabbing; }
+        .task-card:hover { transform: translateY(-2px); }
+        .task-title { font-size: 0.95rem; font-weight: 600; margin: 0; padding-right: 20px; }
+        .btn-delete { position: absolute; top: 10px; right: 10px; cursor: pointer; color: #ef4444; background: none; border: none; padding: 0; }
+        .btn-delete:hover { color: #f87171; }
+    </style>
+</head>
+<body>
+    <div class="container pt-4 text-center">
+        <h2 class="fw-bold"><i class="bi bi-kanban text-primary me-2"></i>Tablero Kanban Interactivo</h2>
+        <p class="text-secondary">Arrastra las tarjetas para cambiar su estado. Los cambios se guardan localmente.</p>
+        <button class="btn btn-primary btn-sm mt-2 fw-bold" onclick="agregarTarea()"><i class="bi bi-plus-lg me-2"></i>Nueva Tarea</button>
+    </div>
+
+    <div class="board" id="kanbanBoard">
+        <!-- Columna Pendiente -->
+        <div class="kanban-col">
+            <h5 class="text-secondary"><i class="bi bi-circle me-2"></i>Pendiente</h5>
+            <div class="drop-zone" id="Pendiente" ondragover="allowDrop(event)" ondrop="drop(event)"></div>
+        </div>
+        <!-- Columna En Proceso -->
+        <div class="kanban-col">
+            <h5 class="text-warning"><i class="bi bi-play-circle me-2"></i>En Proceso</h5>
+            <div class="drop-zone" id="En Proceso" ondragover="allowDrop(event)" ondrop="drop(event)"></div>
+        </div>
+        <!-- Columna Completado -->
+        <div class="kanban-col">
+            <h5 class="text-success"><i class="bi bi-check-circle me-2"></i>Completado</h5>
+            <div class="drop-zone" id="Completado" ondragover="allowDrop(event)" ondrop="drop(event)"></div>
+        </div>
+    </div>
+
+    <script>
+        // Datos iniciales de prueba o datos guardados
+        let tareas = JSON.parse(localStorage.getItem('kanban_tareas')) || [
+            { id: 1, titulo: 'Configurar servidor Node.js', estado: 'Completado' },
+            { id: 2, titulo: 'Integrar API de CodeIgniter', estado: 'En Proceso' },
+            { id: 3, titulo: 'Desplegar aplicación en GitHub Pages', estado: 'Pendiente' }
+        ];
+
+        function renderizar() {
+            document.querySelectorAll('.drop-zone').forEach(d => d.innerHTML = '');
+            tareas.forEach(t => {
+                const div = document.createElement('div');
+                div.className = 'task-card';
+                div.draggable = true;
+                div.id = 'task-' + t.id;
+                div.ondragstart = (e) => e.dataTransfer.setData('text', t.id);
+                div.innerHTML = `
+                    <p class="task-title">${t.titulo}</p>
+                    <button class="btn-delete" onclick="eliminarTarea(${t.id})" title="Eliminar"><i class="bi bi-trash"></i></button>
+                `;
+                // Si la columna de destino existe, agregamos la tarjeta
+                const columnaDestino = document.getElementById(t.estado);
+                if(columnaDestino) columnaDestino.appendChild(div);
+            });
+            localStorage.setItem('kanban_tareas', JSON.stringify(tareas));
+        }
+
+        function agregarTarea() {
+            const titulo = prompt('Ingresa el título de la nueva tarea:');
+            if (titulo && titulo.trim() !== '') {
+                tareas.push({ id: Date.now(), titulo: titulo.trim(), estado: 'Pendiente' });
+                renderizar();
+            }
+        }
+
+        function eliminarTarea(id) {
+            if(confirm('¿Eliminar esta tarea?')) {
+                tareas = tareas.filter(t => t.id !== id);
+                renderizar();
+            }
+        }
+
+        function allowDrop(e) { e.preventDefault(); }
+        
+        function drop(e) {
+            e.preventDefault();
+            const id = e.dataTransfer.getData('text');
+            const zonaDestino = e.target.closest('.drop-zone');
+            
+            if (zonaDestino) {
+                const nuevoEstado = zonaDestino.id;
+                const tarea = tareas.find(t => t.id == id);
+                if(tarea) tarea.estado = nuevoEstado;
+                renderizar();
+            }
+        }
+
+        // Carga inicial
+        renderizar();
+    </script>
+</body>
+</html>
