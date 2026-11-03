@@ -1,0 +1,29 @@
+<div class="board-wrapper">
+  <div class="board-header">
+    <h1>Tablero de Proyectos</h1>
+  </div>
+
+  <div class="board-columns" cdkDropListGroup>
+    
+    <div class="column" *ngFor="let list of boardLists">
+      <div class="column-header">
+        <h2>{{ list.title }}</h2>
+      </div>
+
+      <div 
+        class="card-list"
+        [id]="list._id" 
+        cdkDropList
+        [cdkDropListData]="list.cards"
+        (cdkDropListDropped)="drop($event)">
+        
+        <div class="card" *ngFor="let card of list.cards" cdkDrag>
+          <h3>{{ card.title }}</h3>
+          <p>{{ card.description }}</p>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
